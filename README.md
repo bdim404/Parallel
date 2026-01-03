@@ -64,7 +64,7 @@ sockracer --listen-address 127.0.0.1 --listen-port 1080 --socks upstream1:1081 -
 ## Build
 
 ```bash
-go build -o sockracer
+cd src && go build -o sockracer
 ```
 
 ## Testing
@@ -90,11 +90,19 @@ curl --socks5 127.0.0.1:1080 -w "\nTime: %{time_total}s\n" -o /dev/null -s http:
 ## Example Output
 
 ```
-2026/01/03 17:25:36 listening on 127.0.0.1:1080 with 6 upstreams
-2026/01/03 17:26:39 → new connection from 127.0.0.1:58992
-2026/01/03 17:26:39 request from 127.0.0.1:58992 to 104.26.13.205:443
-2026/01/03 17:26:39 racing 6 upstreams for 104.26.13.205:443
-2026/01/03 17:26:39 ✓ winner: US-West-1 (198.18.169.1:1080) (114ms)
-2026/01/03 17:26:40 relaying data for 127.0.0.1:58992 -> 104.26.13.205:443
-2026/01/03 17:26:40 ← connection closed from 127.0.0.1:58992
+2026/01/04 00:58:10 listening on 127.0.0.1:9080 with 3 upstreams
+2026/01/04 00:58:18 accepted connection from 127.0.0.1:59075
+2026/01/04 00:58:18 socks5: sending connect request (20 bytes) to www.baidu.com:443
+2026/01/04 00:58:18 socks5: sending connect request (20 bytes) to www.baidu.com:443
+2026/01/04 00:58:18 socks5: sending connect request (20 bytes) to www.baidu.com:443
+2026/01/04 00:58:19 socks5: received reply: ver=5, rep=0, rsv=0, atyp=1
+2026/01/04 00:58:19 socks5: read bind addr: 0.0.0.0:0
+2026/01/04 00:58:19 socks5: connect handshake completed successfully
+2026/01/04 00:58:19 ✓ www.baidu.com:443 -> upstream3 (198.18.169.1:1082) (678ms)
+2026/01/04 00:58:19 socks5: received reply: ver=5, rep=0, rsv=0, atyp=1
+2026/01/04 00:58:19 socks5: read bind addr: 0.0.0.0:0
+2026/01/04 00:58:19 socks5: connect handshake completed successfully
+2026/01/04 00:58:19 socks5: received reply: ver=5, rep=0, rsv=0, atyp=1
+2026/01/04 00:58:19 socks5: read bind addr: 0.0.0.0:0
+2026/01/04 00:58:19 socks5: connect handshake completed successfully
 ```
