@@ -14,13 +14,16 @@ import (
 )
 
 func main() {
-	cfg, err := cmd.ParseFlags()
+	flags, err := cmd.ParseFlags()
 	if err != nil {
 		log.Fatalf("parse flags: %v", err)
 	}
 
-	if cfg == nil {
-		cfg, err = config.LoadConfig("config.json")
+	var cfg *config.Config
+	if flags.Config != nil {
+		cfg = flags.Config
+	} else {
+		cfg, err = config.LoadConfig(flags.ConfigPath)
 		if err != nil {
 			log.Fatalf("load config: %v", err)
 		}

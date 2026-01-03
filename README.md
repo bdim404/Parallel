@@ -6,6 +6,8 @@ SOCKS5 parallel racing aggregator
 
 ### Config file mode
 
+Create a config file (default: `config.json`):
+
 ```json
 {
   "listeners": [
@@ -17,15 +19,38 @@ SOCKS5 parallel racing aggregator
 }
 ```
 
+Run with default config file:
 ```bash
-go run .
+parallel
+```
+
+Run with custom config file:
+```bash
+parallel --config /path/to/config.json
+parallel -c /path/to/config.json
 ```
 
 ### Command line mode
 
 ```bash
-go run . --listen-address 127.0.0.1 --listen-port 1080 --socks upstream1:1081 --socks upstream2:1082
+parallel --listen-address 127.0.0.1 --listen-port 1080 --socks upstream1:1081 --socks upstream2:1082
 ```
+
+## Command Line Options
+
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--config` | `-c` | `config.json` | Path to config file |
+| `--listen-address` | | `127.0.0.1` | Listen address for SOCKS5 server |
+| `--listen-port` | | | Listen port (required for command line mode) |
+| `--socks` | | | Upstream SOCKS5 proxy (can be specified multiple times) |
+| `--help` | `-h` | | Show help message |
+
+### Notes
+
+- Config file mode: If `--listen-port` is not specified, the program will load configuration from the config file
+- Command line mode: If `--listen-port` is specified, at least one `--socks` upstream must be provided
+- The `--socks` option can be used multiple times to specify multiple upstream proxies
 
 ## Build
 
