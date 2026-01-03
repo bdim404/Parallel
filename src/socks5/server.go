@@ -1,6 +1,7 @@
 package socks5
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -46,6 +47,8 @@ func HandleNegotiation(conn net.Conn) error {
 }
 
 func ParseRequest(conn net.Conn) (*TargetAddress, error) {
+	var rawBuffer bytes.Buffer
+
 	buf := make([]byte, 4)
 	if _, err := io.ReadFull(conn, buf); err != nil {
 		return nil, fmt.Errorf("read request header: %w", err)
@@ -54,6 +57,8 @@ func ParseRequest(conn net.Conn) (*TargetAddress, error) {
 	version := buf[0]
 	cmd := buf[1]
 	atyp := buf[3]
+
+	rawBuffer.WriteByte(atyp)
 
 	if version != Version5 {
 		return nil, fmt.Errorf("unsupported version: %d", version)
@@ -70,6 +75,7 @@ func ParseRequest(conn net.Conn) (*TargetAddress, error) {
 		if _, err := io.ReadFull(conn, addr); err != nil {
 			return nil, fmt.Errorf("read IPv4 address: %w", err)
 		}
+		rawBuffer.Write(addr)
 		host = net.IP(addr).String()
 
 	case AtypIPv6:
@@ -77,6 +83,7 @@ func ParseRequest(conn net.Conn) (*TargetAddress, error) {
 		if _, err := io.ReadFull(conn, addr); err != nil {
 			return nil, fmt.Errorf("read IPv6 address: %w", err)
 		}
+		rawBuffer.Write(addr)
 		host = net.IP(addr).String()
 
 	case AtypDomain:
@@ -84,11 +91,13 @@ func ParseRequest(conn net.Conn) (*TargetAddress, error) {
 		if _, err := io.ReadFull(conn, lenBuf); err != nil {
 			return nil, fmt.Errorf("read domain length: %w", err)
 		}
+		rawBuffer.Write(lenBuf)
 		domainLen := lenBuf[0]
 		domain := make([]byte, domainLen)
 		if _, err := io.ReadFull(conn, domain); err != nil {
 			return nil, fmt.Errorf("read domain: %w", err)
 		}
+		rawBuffer.Write(domain)
 		host = string(domain)
 
 	default:
@@ -99,12 +108,14 @@ func ParseRequest(conn net.Conn) (*TargetAddress, error) {
 	if _, err := io.ReadFull(conn, portBuf); err != nil {
 		return nil, fmt.Errorf("read port: %w", err)
 	}
+	rawBuffer.Write(portBuf)
 	port := binary.BigEndian.Uint16(portBuf)
 
 	return &TargetAddress{
-		Type: atyp,
-		Host: host,
-		Port: port,
+		Type:       atyp,
+		Host:       host,
+		Port:       port,
+		RawRequest: rawBuffer.Bytes(),
 	}, nil
 }
 

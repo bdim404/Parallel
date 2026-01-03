@@ -66,38 +66,42 @@ func clientConnect(conn net.Conn, target *TargetAddress) error {
 	req := make([]byte, 0, 262)
 	req = append(req, Version5, CmdConnect, 0x00)
 
-	switch target.Type {
-	case AtypIPv4:
-		req = append(req, AtypIPv4)
-		ip := net.ParseIP(target.Host)
-		if ip == nil {
-			return fmt.Errorf("invalid IPv4 address: %s", target.Host)
-		}
-		req = append(req, ip.To4()...)
+	if len(target.RawRequest) > 0 {
+		req = append(req, target.RawRequest...)
+	} else {
+		switch target.Type {
+		case AtypIPv4:
+			req = append(req, AtypIPv4)
+			ip := net.ParseIP(target.Host)
+			if ip == nil {
+				return fmt.Errorf("invalid IPv4 address: %s", target.Host)
+			}
+			req = append(req, ip.To4()...)
 
-	case AtypIPv6:
-		req = append(req, AtypIPv6)
-		ip := net.ParseIP(target.Host)
-		if ip == nil {
-			return fmt.Errorf("invalid IPv6 address: %s", target.Host)
-		}
-		req = append(req, ip.To16()...)
+		case AtypIPv6:
+			req = append(req, AtypIPv6)
+			ip := net.ParseIP(target.Host)
+			if ip == nil {
+				return fmt.Errorf("invalid IPv6 address: %s", target.Host)
+			}
+			req = append(req, ip.To16()...)
 
-	case AtypDomain:
-		req = append(req, AtypDomain)
-		if len(target.Host) > 255 {
-			return fmt.Errorf("domain name too long: %d", len(target.Host))
-		}
-		req = append(req, byte(len(target.Host)))
-		req = append(req, []byte(target.Host)...)
+		case AtypDomain:
+			req = append(req, AtypDomain)
+			if len(target.Host) > 255 {
+				return fmt.Errorf("domain name too long: %d", len(target.Host))
+			}
+			req = append(req, byte(len(target.Host)))
+			req = append(req, []byte(target.Host)...)
 
-	default:
-		return fmt.Errorf("unsupported address type: %d", target.Type)
+		default:
+			return fmt.Errorf("unsupported address type: %d", target.Type)
+		}
+
+		portBuf := make([]byte, 2)
+		binary.BigEndian.PutUint16(portBuf, target.Port)
+		req = append(req, portBuf...)
 	}
-
-	portBuf := make([]byte, 2)
-	binary.BigEndian.PutUint16(portBuf, target.Port)
-	req = append(req, portBuf...)
 
 	log.Printf("socks5: sending connect request (%d bytes) to %s:%d", len(req), target.Host, target.Port)
 	if _, err := conn.Write(req); err != nil {
@@ -116,7 +120,10 @@ func clientConnect(conn net.Conn, target *TargetAddress) error {
 	}
 
 	if reply[1] != RepSuccess {
-		return fmt.Errorf("connection failed: reply code %d", reply[1])
+		return &SOCKS5Error{
+			ReplyCode: reply[1],
+			Message:   fmt.Sprintf("connection failed: reply code %d", reply[1]),
+		}
 	}
 
 	atyp := reply[3]

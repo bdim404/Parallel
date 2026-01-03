@@ -69,6 +69,7 @@ func (p *Pool) race(ctx context.Context, target *socks5.TargetAddress) (net.Conn
 	var winnerConn net.Conn
 	var winnerUpstream config.UpstreamConfig
 	var winnerDuration time.Duration
+	var firstSOCKS5Error *socks5.SOCKS5Error
 
 	for i := 0; i < len(p.upstreams); i++ {
 		select {
@@ -98,6 +99,12 @@ func (p *Pool) race(ctx context.Context, target *socks5.TargetAddress) (net.Conn
 				res.conn.Close()
 			}
 
+			if res.err != nil && firstSOCKS5Error == nil {
+				if socks5Err, ok := res.err.(*socks5.SOCKS5Error); ok {
+					firstSOCKS5Error = socks5Err
+				}
+			}
+
 		case <-raceCtx.Done():
 			log.Printf("✗ %s race timeout after %dms", target, time.Since(raceStartTime).Milliseconds())
 			return nil, fmt.Errorf("race timeout")
@@ -105,6 +112,9 @@ func (p *Pool) race(ctx context.Context, target *socks5.TargetAddress) (net.Conn
 	}
 
 	log.Printf("✗ %s all upstreams failed", target)
+	if firstSOCKS5Error != nil {
+		return nil, firstSOCKS5Error
+	}
 	return nil, fmt.Errorf("all upstreams failed")
 }
 
@@ -115,4 +125,8 @@ func (p *Pool) collectRaceStats(resultCh chan *result, remaining int, raceStart 
 			res.conn.Close()
 		}
 	}
+}
+
+func (p *Pool) GetUpstreams() []config.UpstreamConfig {
+	return p.upstreams
 }

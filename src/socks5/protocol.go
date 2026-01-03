@@ -28,10 +28,20 @@ const (
 	RepAddressTypeNotSupported = 0x08
 )
 
+type SOCKS5Error struct {
+	ReplyCode byte
+	Message   string
+}
+
+func (e *SOCKS5Error) Error() string {
+	return e.Message
+}
+
 type TargetAddress struct {
-	Type byte
-	Host string
-	Port uint16
+	Type       byte
+	Host       string
+	Port       uint16
+	RawRequest []byte
 }
 
 func (t *TargetAddress) String() string {

@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"bufio"
 	"context"
 	"io"
 	"net"
@@ -42,6 +43,40 @@ func Bidirectional(ctx context.Context, a, b net.Conn) {
 	case <-ctx.Done():
 		a.Close()
 		b.Close()
+		<-errCh
+		<-errCh
+	}
+}
+
+func BidirectionalWithReader(ctx context.Context, clientReader *bufio.Reader, clientConn net.Conn, upstreamConn net.Conn) {
+	errCh := make(chan error, 2)
+
+	go func() {
+		buf := bufferPool.Get().([]byte)
+		_, err := io.CopyBuffer(upstreamConn, clientReader, buf)
+		bufferPool.Put(buf)
+		if tcpConn, ok := upstreamConn.(*net.TCPConn); ok {
+			tcpConn.CloseWrite()
+		}
+		errCh <- err
+	}()
+
+	go func() {
+		buf := bufferPool.Get().([]byte)
+		_, err := io.CopyBuffer(clientConn, upstreamConn, buf)
+		bufferPool.Put(buf)
+		if tcpConn, ok := clientConn.(*net.TCPConn); ok {
+			tcpConn.CloseWrite()
+		}
+		errCh <- err
+	}()
+
+	select {
+	case <-errCh:
+		<-errCh
+	case <-ctx.Done():
+		clientConn.Close()
+		upstreamConn.Close()
 		<-errCh
 		<-errCh
 	}
