@@ -5,9 +5,10 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"time"
+
+	"github.com/bdim404/parallel-socks/src/logger"
 )
 
 func DialSOCKS5(ctx context.Context, proxyAddr string, target *TargetAddress) (net.Conn, error) {
@@ -101,7 +102,7 @@ func clientConnect(conn net.Conn, target *TargetAddress) error {
 		req = append(req, portBuf...)
 	}
 
-	log.Printf("socks5: sending connect request (%d bytes) to %s:%d", len(req), target.Host, target.Port)
+	logger.Debug("socks5: sending connect request (%d bytes) to %s:%d", len(req), target.Host, target.Port)
 	if _, err := conn.Write(req); err != nil {
 		return fmt.Errorf("write connect request: %w", err)
 	}
@@ -111,7 +112,7 @@ func clientConnect(conn net.Conn, target *TargetAddress) error {
 		return fmt.Errorf("read reply header: %w", err)
 	}
 
-	log.Printf("socks5: received reply: ver=%d, rep=%d, rsv=%d, atyp=%d", reply[0], reply[1], reply[2], reply[3])
+	logger.Debug("socks5: received reply: ver=%d, rep=%d, rsv=%d, atyp=%d", reply[0], reply[1], reply[2], reply[3])
 
 	if reply[0] != Version5 {
 		return fmt.Errorf("unsupported version: %d", reply[0])
@@ -130,15 +131,15 @@ func clientConnect(conn net.Conn, target *TargetAddress) error {
 		discard := make([]byte, 6)
 		n, err := io.ReadFull(conn, discard)
 		if err != nil {
-			log.Printf("socks5: error - failed to read IPv4 bind addr (read %d/6 bytes): %v", n, err)
+			logger.Debug("socks5: error - failed to read IPv4 bind addr (read %d/6 bytes): %v", n, err)
 			return fmt.Errorf("read bind addr: %w", err)
 		}
-		log.Printf("socks5: read bind addr: %d.%d.%d.%d:%d", discard[0], discard[1], discard[2], discard[3], uint16(discard[4])<<8|uint16(discard[5]))
+		logger.Debug("socks5: read bind addr: %d.%d.%d.%d:%d", discard[0], discard[1], discard[2], discard[3], uint16(discard[4])<<8|uint16(discard[5]))
 	case AtypIPv6:
 		discard := make([]byte, 18)
 		n, err := io.ReadFull(conn, discard)
 		if err != nil {
-			log.Printf("socks5: error - failed to read IPv6 bind addr (read %d/18 bytes): %v", n, err)
+			logger.Debug("socks5: error - failed to read IPv6 bind addr (read %d/18 bytes): %v", n, err)
 			return fmt.Errorf("read bind addr: %w", err)
 		}
 	case AtypDomain:
@@ -149,11 +150,11 @@ func clientConnect(conn net.Conn, target *TargetAddress) error {
 		discard := make([]byte, int(lenBuf[0])+2)
 		n, err := io.ReadFull(conn, discard)
 		if err != nil {
-			log.Printf("socks5: error - failed to read domain bind addr (read %d/%d bytes): %v", n, len(discard), err)
+			logger.Debug("socks5: error - failed to read domain bind addr (read %d/%d bytes): %v", n, len(discard), err)
 			return fmt.Errorf("read bind addr: %w", err)
 		}
 	}
 
-	log.Printf("socks5: connect handshake completed successfully")
+	logger.Debug("socks5: connect handshake completed successfully")
 	return nil
 }

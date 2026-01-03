@@ -3,12 +3,12 @@ package pool
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"time"
 
-	"github.com/bdim404/SockRacer/src/config"
-	"github.com/bdim404/SockRacer/src/socks5"
+	"github.com/bdim404/parallel-socks/src/config"
+	"github.com/bdim404/parallel-socks/src/logger"
+	"github.com/bdim404/parallel-socks/src/socks5"
 )
 
 type Pool struct {
@@ -79,7 +79,7 @@ func (p *Pool) race(ctx context.Context, target *socks5.TargetAddress) (net.Conn
 				if winnerUpstream.Name != "" {
 					winnerName = fmt.Sprintf("%s (%s)", winnerUpstream.Name, winnerUpstream.Address)
 				}
-				log.Printf("✓ %s -> %s (%dms)", target, winnerName, winnerDuration.Milliseconds())
+				logger.Info("✓ %s -> %s (%dms)", target, winnerName, winnerDuration.Milliseconds())
 
 				go p.collectRaceStats(resultCh, len(p.upstreams)-i-1)
 
@@ -97,12 +97,12 @@ func (p *Pool) race(ctx context.Context, target *socks5.TargetAddress) (net.Conn
 			}
 
 		case <-raceCtx.Done():
-			log.Printf("✗ %s race timeout after %dms", target, time.Since(raceStartTime).Milliseconds())
+			logger.Info("✗ %s race timeout after %dms", target, time.Since(raceStartTime).Milliseconds())
 			return nil, config.UpstreamConfig{}, fmt.Errorf("race timeout")
 		}
 	}
 
-	log.Printf("✗ %s all upstreams failed", target)
+	logger.Info("✗ %s all upstreams failed", target)
 	if firstSOCKS5Error != nil {
 		return nil, config.UpstreamConfig{}, firstSOCKS5Error
 	}

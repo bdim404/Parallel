@@ -2,13 +2,13 @@ package listener
 
 import (
 	"context"
-	"log"
 	"net"
 	"sync"
 	"time"
 
-	"github.com/bdim404/SockRacer/src/config"
-	"github.com/bdim404/SockRacer/src/pool"
+	"github.com/bdim404/parallel-socks/src/config"
+	"github.com/bdim404/parallel-socks/src/logger"
+	"github.com/bdim404/parallel-socks/src/pool"
 )
 
 type Listener struct {
@@ -41,7 +41,7 @@ func (l *Listener) Serve(ctx context.Context) error {
 		l.ln.Close()
 	}()
 
-	log.Printf("listening on %s with %d upstreams", l.cfg.Listen, len(l.cfg.Socks))
+	logger.Info("listening on %s with %d upstreams", l.cfg.Listen, len(l.cfg.Socks))
 
 	for {
 		conn, err := l.ln.Accept()
@@ -51,12 +51,12 @@ func (l *Listener) Serve(ctx context.Context) error {
 				l.wg.Wait()
 				return nil
 			default:
-				log.Printf("accept error: %v", err)
+				logger.Info("accept error: %v", err)
 				continue
 			}
 		}
 
-		log.Printf("accepted connection from %s", conn.RemoteAddr())
+		logger.Info("accepted connection from %s", conn.RemoteAddr())
 
 		l.wg.Add(1)
 		go func() {

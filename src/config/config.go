@@ -6,6 +6,7 @@ import (
 )
 
 type Config struct {
+	LogLevel  string           `json:"log_level,omitempty"`
 	Listeners []ListenerConfig `json:"listeners"`
 }
 
@@ -20,6 +21,13 @@ type ListenerConfig struct {
 }
 
 func (c *Config) Validate() error {
+	if c.LogLevel != "" && c.LogLevel != "debug" && c.LogLevel != "info" {
+		return fmt.Errorf("invalid log level: %s (must be 'debug' or 'info')", c.LogLevel)
+	}
+	if c.LogLevel == "" {
+		c.LogLevel = "info"
+	}
+
 	if len(c.Listeners) == 0 {
 		return fmt.Errorf("no listeners configured")
 	}
