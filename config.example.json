@@ -1,0 +1,19 @@
+{
+  "listeners": [
+    {
+      "listen": "127.0.0.1:1080",
+      "socks": [
+        "us1.example.com:1081",
+        "us2.example.com:1082",
+        "us3.example.com:1083"
+      ]
+    },
+    {
+      "listen": "127.0.0.1:1081",
+      "socks": [
+        "eu1.example.com:2081",
+        "eu2.example.com:2082"
+      ]
+    }
+  ]
+}
