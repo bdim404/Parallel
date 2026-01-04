@@ -2,6 +2,20 @@
 
 SOCKS5 parallel racing aggregator
 
+## Installation
+
+### Using Nix
+
+```bash
+nix profile add github:bdim404/parallel-socks
+```
+
+### From Source
+
+```bash
+cd src && go build -o parallel-socks
+```
+
 ## Usage
 
 ### Config file mode
@@ -64,12 +78,6 @@ parallel-socks -a ::1 -p 1080 -s upstream1:1081 -l debug
 - Config file mode: If `--listen-port` is not specified, the program will load configuration from the config file
 - Command line mode: If `--listen-port` is specified, at least one `--socks` upstream must be provided
 - The `--socks` option can be used multiple times to specify multiple upstream proxies
-
-## Build
-
-```bash
-cd src && go build -o parallel-socks
-```
 
 ## Testing
 
